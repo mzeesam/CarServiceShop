@@ -14,7 +14,7 @@ Build a comprehensive **Car Service & Maintenance Shop Management System** using
 | Frontend | Blazor Server (.NET 8/9) |
 | UI Components | MudBlazor / Radzen Blazor |
 | Backend API | ASP.NET Core Web API |
-| Database | SQL Server / PostgreSQL |
+| Database | SQLite |
 | ORM | Entity Framework Core |
 | Authentication | ASP.NET Core Identity with JWT |
 | Real-time | SignalR (for live updates) |
@@ -997,46 +997,46 @@ AuditLogs
 
 ## 8. Implementation Phases
 
-### Phase 1: Foundation (Weeks 1-3)
+### Phase 1: Foundation 
 - Project setup and architecture
 - Database design and migrations
 - Authentication and authorization
 - User management
 - Basic UI layout and navigation
 
-### Phase 2: Core Operations (Weeks 4-7)
+### Phase 2: Core Operations
 - Customer management
 - Vehicle management
 - Appointment/booking system
 - Service and pricing setup
 - Bay management
 
-### Phase 3: Work Management (Weeks 8-11)
+### Phase 3: Work Management 
 - Estimate creation and workflow
 - Work order management
 - Technician assignment and tracking
 - Parts requisition from inventory
 - Job card printing
 
-### Phase 4: Inventory & Procurement (Weeks 12-14)
+### Phase 4: Inventory & Procurement
 - Parts/inventory management
 - Supplier management
 - Purchase orders
 - Stock management
 
-### Phase 5: Financial (Weeks 15-17)
+### Phase 5: Financial 
 - Invoicing
 - Payment processing
 - Credit management
 - Financial reports
 
-### Phase 6: Reports & Analytics (Weeks 18-19)
+### Phase 6: Reports & Analytics 
 - Operational reports
 - Financial reports
 - Inventory reports
 - Dashboard analytics
 
-### Phase 7: Polish & Deployment (Weeks 20-22)
+### Phase 7: Polish & Deployment 
 - UI/UX refinement
 - Performance optimization
 - Security hardening
@@ -1075,4 +1075,3 @@ AuditLogs
 ---
 
 *Document Version: 1.0*
-*Generated for: Car Service Shop Management System*
