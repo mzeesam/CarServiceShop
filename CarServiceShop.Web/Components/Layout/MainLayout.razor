@@ -69,10 +69,13 @@ else
         }
     }
 
-    private async void OnAuthStateChanged()
+    private void OnAuthStateChanged()
     {
-        await CheckAuthentication();
-        await InvokeAsync(StateHasChanged);
+        InvokeAsync(async () =>
+        {
+            await CheckAuthentication();
+            StateHasChanged();
+        });
     }
 
     private async Task HandleLogout()

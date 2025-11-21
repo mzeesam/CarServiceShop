@@ -156,7 +156,7 @@ public class AppointmentsController : ControllerBase
                 CustomerId = request.CustomerId,
                 VehicleId = request.VehicleId,
                 AppointmentDate = request.AppointmentDate,
-                EstimatedDuration = (int)request.Duration,
+                EstimatedDuration = Convert.ToInt32(Math.Round(request.Duration)),
                 ServiceTypeRequested = request.ServiceType,
                 BayId = request.BayId,
                 TechnicianId = request.TechnicianId,
@@ -222,7 +222,7 @@ public class AppointmentsController : ControllerBase
             }
 
             appointment.AppointmentDate = request.AppointmentDate;
-            appointment.EstimatedDuration = (int)request.Duration;
+            appointment.EstimatedDuration = Convert.ToInt32(Math.Round(request.Duration));
             appointment.ServiceTypeRequested = request.ServiceType;
             appointment.BayId = request.BayId;
             appointment.TechnicianId = request.TechnicianId;
