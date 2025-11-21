@@ -1,36 +1,96 @@
 ﻿@inherits LayoutComponentBase
+@inject AuthService AuthService
+@inject NavigationManager NavigationManager
+@implements IDisposable
 
 <MudThemeProvider />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
-<MudLayout>
-    <MudAppBar Elevation="1">
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
-        <MudText Typo="Typo.h6" Class="ml-3">Car Service Shop</MudText>
-        <MudSpacer />
-        <MudIconButton Icon="@Icons.Material.Filled.Notifications" Color="Color.Inherit" />
-        <MudIconButton Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Inherit" />
-    </MudAppBar>
-    <MudDrawer @bind-Open="_drawerOpen" Elevation="2" ClipMode="DrawerClipMode.Always">
-        <MudDrawerHeader>
-            <MudText Typo="Typo.h5" Color="Color.Primary">Menu</MudText>
-        </MudDrawerHeader>
-        <NavMenu />
-    </MudDrawer>
-    <MudMainContent>
-        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="my-4">
-            @Body
-        </MudContainer>
-    </MudMainContent>
-</MudLayout>
+@if (!isAuthenticated)
+{
+    @* Redirect to login handled in code *@
+}
+else
+{
+    <MudLayout>
+        <MudAppBar Elevation="1">
+            <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+            <MudText Typo="Typo.h6" Class="ml-3">Car Service Shop</MudText>
+            <MudSpacer />
+            @if (currentUser != null)
+            {
+                <MudText Typo="Typo.body2" Class="mr-3">@currentUser.Username (@currentUser.Role)</MudText>
+            }
+            <MudIconButton Icon="@Icons.Material.Filled.Notifications" Color="Color.Inherit" />
+            <MudMenu Icon="@Icons.Material.Filled.AccountCircle" Color="Color.Inherit">
+                <MudMenuItem Icon="@Icons.Material.Filled.Person">Profile</MudMenuItem>
+                <MudMenuItem Icon="@Icons.Material.Filled.Settings">Settings</MudMenuItem>
+                <MudDivider />
+                <MudMenuItem Icon="@Icons.Material.Filled.Logout" OnClick="HandleLogout">Logout</MudMenuItem>
+            </MudMenu>
+        </MudAppBar>
+        <MudDrawer @bind-Open="_drawerOpen" Elevation="2" ClipMode="DrawerClipMode.Always">
+            <MudDrawerHeader>
+                <MudText Typo="Typo.h5" Color="Color.Primary">Menu</MudText>
+            </MudDrawerHeader>
+            <NavMenu />
+        </MudDrawer>
+        <MudMainContent>
+            <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="my-4">
+                @Body
+            </MudContainer>
+        </MudMainContent>
+    </MudLayout>
+}
 
 @code {
     private bool _drawerOpen = true;
+    private bool isAuthenticated = false;
+    private CarServiceShop.Web.Services.LoginResponse? currentUser;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CheckAuthentication();
+        AuthService.OnAuthStateChanged += OnAuthStateChanged;
+    }
+
+    private async Task CheckAuthentication()
+    {
+        isAuthenticated = await AuthService.IsAuthenticatedAsync();
+        if (isAuthenticated)
+        {
+            currentUser = await AuthService.GetCurrentUserAsync();
+        }
+        else
+        {
+            NavigationManager.NavigateTo("/login", true);
+        }
+    }
+
+    private void OnAuthStateChanged()
+    {
+        InvokeAsync(async () =>
+        {
+            await CheckAuthentication();
+            StateHasChanged();
+        });
+    }
+
+    private async Task HandleLogout()
+    {
+        await AuthService.LogoutAsync();
+        NavigationManager.NavigateTo("/login", true);
+    }
 
     void DrawerToggle()
     {
         _drawerOpen = !_drawerOpen;
+    }
+
+    public void Dispose()
+    {
+        AuthService.OnAuthStateChanged -= OnAuthStateChanged;
     }
 }

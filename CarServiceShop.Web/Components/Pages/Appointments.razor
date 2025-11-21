@@ -1,0 +1,203 @@
+@page "/appointments"
+@rendermode InteractiveServer
+@inject IHttpClientFactory HttpClientFactory
+@inject ISnackbar Snackbar
+
+<PageTitle>Appointments - Car Service Shop</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">Appointments</MudText>
+
+<MudGrid>
+    <MudItem xs="12" md="3">
+        <MudCard Elevation="2">
+            <MudCardHeader>
+                <MudText Typo="Typo.h6">Today's Stats</MudText>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudStack Spacing="3">
+                    <div>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Total Appointments</MudText>
+                        <MudText Typo="Typo.h4" Color="Color.Primary">@todayAppointments.Count</MudText>
+                    </div>
+                    <MudDivider />
+                    <div>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Scheduled</MudText>
+                        <MudText Typo="Typo.h6">@todayAppointments.Count(a => a.Status == AppointmentStatus.Scheduled)</MudText>
+                    </div>
+                    <div>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">In Progress</MudText>
+                        <MudText Typo="Typo.h6">@todayAppointments.Count(a => a.Status == AppointmentStatus.InProgress)</MudText>
+                    </div>
+                    <div>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Completed</MudText>
+                        <MudText Typo="Typo.h6">@todayAppointments.Count(a => a.Status == AppointmentStatus.Completed)</MudText>
+                    </div>
+                </MudStack>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" md="9">
+        <MudCard Elevation="2">
+            <MudCardHeader>
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudDatePicker @bind-Date="selectedDate"
+                                       Label="Select Date"
+                                       Variant="Variant.Outlined" />
+                    </MudItem>
+                    <MudItem xs="12" md="6" Class="d-flex justify-end align-center">
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Filled.Add"
+                                   OnClick="OpenCreateDialog">
+                            New Appointment
+                        </MudButton>
+                    </MudItem>
+                </MudGrid>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudTable Items="@FilteredAppointments"
+                          Hover="true"
+                          Breakpoint="Breakpoint.Sm"
+                          Loading="@loading"
+                          LoadingProgressColor="Color.Primary"
+                          Dense="true">
+                    <HeaderContent>
+                        <MudTh>Time</MudTh>
+                        <MudTh>Customer</MudTh>
+                        <MudTh>Vehicle</MudTh>
+                        <MudTh>Service Type</MudTh>
+                        <MudTh>Bay</MudTh>
+                        <MudTh>Technician</MudTh>
+                        <MudTh>Status</MudTh>
+                        <MudTh>Actions</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Time">
+                            <MudText Typo="Typo.body2" Class="font-weight-bold">
+                                @context.AppointmentDate.ToString("HH:mm")
+                            </MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                @context.Duration min
+                            </MudText>
+                        </MudTd>
+                        <MudTd DataLabel="Customer">@context.CustomerName</MudTd>
+                        <MudTd DataLabel="Vehicle">@context.VehicleDescription</MudTd>
+                        <MudTd DataLabel="Service Type">
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">
+                                @context.ServiceType
+                            </MudChip>
+                        </MudTd>
+                        <MudTd DataLabel="Bay">@(context.BayName ?? "-")</MudTd>
+                        <MudTd DataLabel="Technician">@(context.TechnicianName ?? "Unassigned")</MudTd>
+                        <MudTd DataLabel="Status">
+                            <MudChip T="string" Size="Size.Small" Color="@GetStatusColor(context.Status)">
+                                @context.Status.ToString()
+                            </MudChip>
+                        </MudTd>
+                        <MudTd DataLabel="Actions">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                           Size="Size.Small"
+                                           Color="Color.Primary"
+                                           OnClick="@(() => EditAppointment(context.Id))"
+                                           Title="Edit" />
+                            <MudIconButton Icon="@Icons.Material.Filled.CheckCircle"
+                                           Size="Size.Small"
+                                           Color="Color.Success"
+                                           OnClick="@(() => CheckInAppointment(context.Id))"
+                                           Title="Check In" />
+                        </MudTd>
+                    </RowTemplate>
+                    <NoRecordsContent>
+                        <MudText Align="Align.Center" Typo="Typo.body1" Class="pa-4">
+                            No appointments for selected date. Click "New Appointment" to create one.
+                        </MudText>
+                    </NoRecordsContent>
+                </MudTable>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private List<AppointmentDto> appointments = new();
+    private DateTime? selectedDate = DateTime.Today;
+    private bool loading = true;
+
+    private List<AppointmentDto> FilteredAppointments =>
+        appointments.Where(a => a.AppointmentDate.Date == (selectedDate?.Date ?? DateTime.Today)).ToList();
+
+    private List<AppointmentDto> todayAppointments =>
+        appointments.Where(a => a.AppointmentDate.Date == DateTime.Today).ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAppointments();
+    }
+
+    private async Task LoadAppointments()
+    {
+        loading = true;
+        try
+        {
+            var client = HttpClientFactory.CreateClient("CarServiceShopAPI");
+            var startDate = DateTime.Today.AddDays(-30).ToString("yyyy-MM-dd");
+            var endDate = DateTime.Today.AddDays(30).ToString("yyyy-MM-dd");
+            var response = await client.GetAsync($"api/appointments?startDate={startDate}&endDate={endDate}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                appointments = await response.Content.ReadFromJsonAsync<List<AppointmentDto>>() ?? new();
+                Snackbar.Add($"Loaded {appointments.Count} appointments", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("Failed to load appointments", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading appointments: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task OnDateChanged(DateTime? date)
+    {
+        selectedDate = date;
+    }
+
+    private Color GetStatusColor(AppointmentStatus status)
+    {
+        return status switch
+        {
+            AppointmentStatus.Scheduled => Color.Info,
+            AppointmentStatus.Confirmed => Color.Primary,
+            AppointmentStatus.CheckedIn => Color.Warning,
+            AppointmentStatus.InProgress => Color.Warning,
+            AppointmentStatus.Completed => Color.Success,
+            AppointmentStatus.NoShow => Color.Error,
+            AppointmentStatus.Cancelled => Color.Default,
+            _ => Color.Default
+        };
+    }
+
+    private void OpenCreateDialog()
+    {
+        Snackbar.Add("Create appointment dialog - To be implemented", Severity.Info);
+    }
+
+    private void EditAppointment(int id)
+    {
+        Snackbar.Add($"Edit appointment {id} - To be implemented", Severity.Info);
+    }
+
+    private void CheckInAppointment(int id)
+    {
+        Snackbar.Add($"Check in appointment {id} - To be implemented", Severity.Info);
+    }
+}

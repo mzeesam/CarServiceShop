@@ -1,4 +1,5 @@
 using CarServiceShop.Web.Components;
+using CarServiceShop.Web.Services;
 using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,11 +11,16 @@ builder.Services.AddRazorComponents()
 // Add MudBlazor services
 builder.Services.AddMudServices();
 
-// Add HttpClient for API calls
+// Add Auth service
+builder.Services.AddScoped<AuthService>();
+builder.Services.AddTransient<AuthenticatedHttpClientHandler>();
+
+// Add HttpClient for API calls with authentication
 builder.Services.AddHttpClient("CarServiceShopAPI", client =>
 {
     client.BaseAddress = new Uri(builder.Configuration["ApiSettings:BaseUrl"] ?? "https://localhost:7001/");
-});
+})
+.AddHttpMessageHandler<AuthenticatedHttpClientHandler>();
 
 var app = builder.Build();
 
