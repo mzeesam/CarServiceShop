@@ -1,0 +1,177 @@
+@page "/parts"
+@rendermode InteractiveServer
+@inject IHttpClientFactory HttpClientFactory
+@inject ISnackbar Snackbar
+
+<PageTitle>Parts Inventory - Car Service Shop</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">Parts Inventory</MudText>
+
+<MudGrid>
+    <MudItem xs="12">
+        <MudCard Elevation="2">
+            <MudCardHeader>
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="searchString"
+                                      Placeholder="Search parts..."
+                                      Adornment="Adornment.Start"
+                                      AdornmentIcon="@Icons.Material.Filled.Search"
+                                      IconSize="Size.Medium"
+                                      Class="mt-0"
+                                      Immediate="true"
+                                      DebounceInterval="300" />
+                    </MudItem>
+                    <MudItem xs="12" md="6" Class="d-flex justify-end align-center gap-2">
+                        <MudChip T="string" Icon="@Icons.Material.Filled.Warning" Color="Color.Warning">
+                            Low Stock: @LowStockCount
+                        </MudChip>
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Filled.Add"
+                                   OnClick="OpenCreateDialog">
+                            New Part
+                        </MudButton>
+                    </MudItem>
+                </MudGrid>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudTable Items="@FilteredParts"
+                          Hover="true"
+                          Breakpoint="Breakpoint.Sm"
+                          Loading="@loading"
+                          LoadingProgressColor="Color.Primary"
+                          Dense="true">
+                    <HeaderContent>
+                        <MudTh>Part #</MudTh>
+                        <MudTh>Name</MudTh>
+                        <MudTh>Category</MudTh>
+                        <MudTh>Stock</MudTh>
+                        <MudTh>Min Stock</MudTh>
+                        <MudTh>Cost Price</MudTh>
+                        <MudTh>Retail Price</MudTh>
+                        <MudTh>Status</MudTh>
+                        <MudTh>Actions</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Part #">
+                            <MudText Typo="Typo.body2" Class="font-weight-bold">@context.PartNumber</MudText>
+                        </MudTd>
+                        <MudTd DataLabel="Name">
+                            <MudText Typo="Typo.body2">@context.Name</MudText>
+                            @if (!string.IsNullOrEmpty(context.Location))
+                            {
+                                <MudText Typo="Typo.caption" Color="Color.Secondary">@context.Location</MudText>
+                            }
+                        </MudTd>
+                        <MudTd DataLabel="Category">
+                            <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">
+                                @(context.CategoryName ?? "N/A")
+                            </MudChip>
+                        </MudTd>
+                        <MudTd DataLabel="Stock">
+                            <MudText Typo="Typo.body2" Color="@GetStockColor(context.QuantityOnHand, context.MinimumStock)">
+                                @context.QuantityOnHand
+                            </MudText>
+                        </MudTd>
+                        <MudTd DataLabel="Min Stock">@context.MinimumStock</MudTd>
+                        <MudTd DataLabel="Cost Price">$@context.CostPrice.ToString("N2")</MudTd>
+                        <MudTd DataLabel="Retail Price">$@context.RetailPrice.ToString("N2")</MudTd>
+                        <MudTd DataLabel="Status">
+                            <MudChip T="string" Size="Size.Small" Color="@(context.IsActive ? Color.Success : Color.Default)">
+                                @(context.IsActive ? "Active" : "Inactive")
+                            </MudChip>
+                        </MudTd>
+                        <MudTd DataLabel="Actions">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                           Size="Size.Small"
+                                           Color="Color.Primary"
+                                           OnClick="@(() => EditPart(context.Id))"
+                                           Title="Edit" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                           Size="Size.Small"
+                                           Color="Color.Error"
+                                           OnClick="@(() => DeletePart(context.Id))"
+                                           Title="Delete" />
+                        </MudTd>
+                    </RowTemplate>
+                    <NoRecordsContent>
+                        <MudText Align="Align.Center" Typo="Typo.body1" Class="pa-4">
+                            No parts found. Click "New Part" to add one.
+                        </MudText>
+                    </NoRecordsContent>
+                </MudTable>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private List<PartDto> parts = new();
+    private string searchString = string.Empty;
+    private bool loading = true;
+
+    private IEnumerable<PartDto> FilteredParts =>
+        parts.Where(p =>
+            string.IsNullOrWhiteSpace(searchString) ||
+            p.PartNumber.Contains(searchString, StringComparison.OrdinalIgnoreCase) ||
+            p.Name.Contains(searchString, StringComparison.OrdinalIgnoreCase) ||
+            (p.CategoryName != null && p.CategoryName.Contains(searchString, StringComparison.OrdinalIgnoreCase)));
+
+    private int LowStockCount => parts.Count(p => p.QuantityOnHand <= p.MinimumStock);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadParts();
+    }
+
+    private async Task LoadParts()
+    {
+        loading = true;
+        try
+        {
+            var client = HttpClientFactory.CreateClient("CarServiceShopAPI");
+            var response = await client.GetAsync("api/parts");
+
+            if (response.IsSuccessStatusCode)
+            {
+                parts = await response.Content.ReadFromJsonAsync<List<PartDto>>() ?? new();
+                Snackbar.Add($"Loaded {parts.Count} parts", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("Failed to load parts", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading parts: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private Color GetStockColor(int quantity, int minStock)
+    {
+        if (quantity == 0) return Color.Error;
+        if (quantity <= minStock) return Color.Warning;
+        return Color.Success;
+    }
+
+    private void OpenCreateDialog()
+    {
+        Snackbar.Add("Create part dialog - To be implemented", Severity.Info);
+    }
+
+    private void EditPart(int id)
+    {
+        Snackbar.Add($"Edit part {id} - To be implemented", Severity.Info);
+    }
+
+    private async Task DeletePart(int id)
+    {
+        Snackbar.Add($"Delete part {id} - To be implemented", Severity.Info);
+    }
+}

@@ -1,0 +1,158 @@
+@page "/vehicles"
+@rendermode InteractiveServer
+@inject IHttpClientFactory HttpClientFactory
+@inject ISnackbar Snackbar
+
+<PageTitle>Vehicles - Car Service Shop</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">Vehicles</MudText>
+
+<MudCard Elevation="2">
+    <MudCardHeader>
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudTextField @bind-Value="searchString"
+                              Placeholder="Search vehicles..."
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Search"
+                              IconSize="Size.Medium"
+                              Class="mt-0"
+                              Immediate="true"
+                              DebounceInterval="300" />
+            </MudItem>
+            <MudItem xs="12" md="6" Class="d-flex justify-end align-center">
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Add"
+                           OnClick="OpenCreateDialog">
+                    New Vehicle
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudCardHeader>
+    <MudCardContent>
+        <MudTable Items="@FilteredVehicles"
+                  Hover="true"
+                  Breakpoint="Breakpoint.Sm"
+                  Loading="@loading"
+                  LoadingProgressColor="Color.Primary"
+                  Dense="true">
+            <HeaderContent>
+                <MudTh>Registration</MudTh>
+                <MudTh>Make/Model</MudTh>
+                <MudTh>Year</MudTh>
+                <MudTh>Customer</MudTh>
+                <MudTh>Engine</MudTh>
+                <MudTh>Mileage</MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Registration">
+                    <MudText Typo="Typo.body2" Class="font-weight-bold">@context.RegistrationNumber</MudText>
+                </MudTd>
+                <MudTd DataLabel="Make/Model">
+                    <MudText Typo="Typo.body2">@context.Make @context.Model</MudText>
+                </MudTd>
+                <MudTd DataLabel="Year">@context.Year</MudTd>
+                <MudTd DataLabel="Customer">@context.CustomerName</MudTd>
+                <MudTd DataLabel="Engine">
+                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@context.EngineType</MudChip>
+                </MudTd>
+                <MudTd DataLabel="Mileage">@context.CurrentMileage.ToString("N0") km</MudTd>
+                <MudTd DataLabel="Actions">
+                    <MudIconButton Icon="@Icons.Material.Filled.Visibility"
+                                   Size="Size.Small"
+                                   Color="Color.Info"
+                                   OnClick="@(() => ViewVehicle(context.Id))"
+                                   Title="View Details" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                   Size="Size.Small"
+                                   Color="Color.Primary"
+                                   OnClick="@(() => EditVehicle(context.Id))"
+                                   Title="Edit" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                   Size="Size.Small"
+                                   Color="Color.Error"
+                                   OnClick="@(() => DeleteVehicle(context.Id))"
+                                   Title="Delete" />
+                </MudTd>
+            </RowTemplate>
+            <NoRecordsContent>
+                <MudText Align="Align.Center" Typo="Typo.body1" Class="pa-4">
+                    No vehicles found. Click "New Vehicle" to add one.
+                </MudText>
+            </NoRecordsContent>
+            <LoadingContent>
+                <MudText Align="Align.Center" Typo="Typo.body1" Class="pa-4">
+                    Loading vehicles...
+                </MudText>
+            </LoadingContent>
+        </MudTable>
+    </MudCardContent>
+</MudCard>
+
+@code {
+    private List<VehicleDto> vehicles = new();
+    private string searchString = string.Empty;
+    private bool loading = true;
+
+    private IEnumerable<VehicleDto> FilteredVehicles =>
+        vehicles.Where(v =>
+            string.IsNullOrWhiteSpace(searchString) ||
+            v.RegistrationNumber.Contains(searchString, StringComparison.OrdinalIgnoreCase) ||
+            v.Make.Contains(searchString, StringComparison.OrdinalIgnoreCase) ||
+            v.Model.Contains(searchString, StringComparison.OrdinalIgnoreCase) ||
+            v.CustomerName.Contains(searchString, StringComparison.OrdinalIgnoreCase));
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadVehicles();
+    }
+
+    private async Task LoadVehicles()
+    {
+        loading = true;
+        try
+        {
+            var client = HttpClientFactory.CreateClient("CarServiceShopAPI");
+            var response = await client.GetAsync("api/vehicles");
+
+            if (response.IsSuccessStatusCode)
+            {
+                vehicles = await response.Content.ReadFromJsonAsync<List<VehicleDto>>() ?? new();
+            }
+            else
+            {
+                Snackbar.Add("Failed to load vehicles", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading vehicles: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private void OpenCreateDialog()
+    {
+        Snackbar.Add("Create vehicle dialog - To be implemented", Severity.Info);
+    }
+
+    private void ViewVehicle(int id)
+    {
+        Snackbar.Add($"View vehicle {id} - To be implemented", Severity.Info);
+    }
+
+    private void EditVehicle(int id)
+    {
+        Snackbar.Add($"Edit vehicle {id} - To be implemented", Severity.Info);
+    }
+
+    private async Task DeleteVehicle(int id)
+    {
+        Snackbar.Add($"Delete vehicle {id} - To be implemented", Severity.Info);
+    }
+}
