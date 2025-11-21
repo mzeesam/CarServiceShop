@@ -1,0 +1,119 @@
+﻿@page "/"
+@rendermode InteractiveServer
+
+<PageTitle>Dashboard - Car Service Shop</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">Dashboard</MudText>
+
+<MudGrid>
+    <MudItem xs="12" sm="6" md="3">
+        <MudCard Elevation="2">
+            <MudCardContent>
+                <MudText Typo="Typo.h6">Today's Appointments</MudText>
+                <MudText Typo="Typo.h3" Color="Color.Primary">12</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">3 Pending Confirmation</MudText>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" sm="6" md="3">
+        <MudCard Elevation="2">
+            <MudCardContent>
+                <MudText Typo="Typo.h6">Active Work Orders</MudText>
+                <MudText Typo="Typo.h3" Color="Color.Warning">8</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">2 Waiting for Parts</MudText>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" sm="6" md="3">
+        <MudCard Elevation="2">
+            <MudCardContent>
+                <MudText Typo="Typo.h6">Today's Revenue</MudText>
+                <MudText Typo="Typo.h3" Color="Color.Success">$4,250</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">+15% from yesterday</MudText>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" sm="6" md="3">
+        <MudCard Elevation="2">
+            <MudCardContent>
+                <MudText Typo="Typo.h6">Low Stock Alerts</MudText>
+                <MudText Typo="Typo.h3" Color="Color.Error">5</MudText>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">Items need reordering</MudText>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" md="8">
+        <MudCard Elevation="2">
+            <MudCardHeader>
+                <MudText Typo="Typo.h6">Recent Work Orders</MudText>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudTable Items="@recentWorkOrders" Hover="true" Breakpoint="Breakpoint.Sm">
+                    <HeaderContent>
+                        <MudTh>WO Number</MudTh>
+                        <MudTh>Customer</MudTh>
+                        <MudTh>Vehicle</MudTh>
+                        <MudTh>Status</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="WO Number">@context.WorkOrderNumber</MudTd>
+                        <MudTd DataLabel="Customer">@context.Customer</MudTd>
+                        <MudTd DataLabel="Vehicle">@context.Vehicle</MudTd>
+                        <MudTd DataLabel="Status">
+                            <MudChip T="string" Size="Size.Small" Color="@GetStatusColor(context.Status)">@context.Status</MudChip>
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="12" md="4">
+        <MudCard Elevation="2">
+            <MudCardHeader>
+                <MudText Typo="Typo.h6">Quick Actions</MudText>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudStack Spacing="2">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" StartIcon="@Icons.Material.Filled.Add">New Appointment</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Secondary" FullWidth="true" StartIcon="@Icons.Material.Filled.PersonAdd">New Customer</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Tertiary" FullWidth="true" StartIcon="@Icons.Material.Filled.Build">New Work Order</MudButton>
+                    <MudButton Variant="Variant.Filled" Color="Color.Info" FullWidth="true" StartIcon="@Icons.Material.Filled.Receipt">New Invoice</MudButton>
+                </MudStack>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private List<WorkOrderSummary> recentWorkOrders = new()
+    {
+        new() { WorkOrderNumber = "WO-001234", Customer = "John Doe", Vehicle = "Toyota Camry 2020", Status = "In Progress" },
+        new() { WorkOrderNumber = "WO-001235", Customer = "Jane Smith", Vehicle = "Honda Accord 2019", Status = "Ready for Pickup" },
+        new() { WorkOrderNumber = "WO-001236", Customer = "Bob Johnson", Vehicle = "Ford F-150 2021", Status = "Waiting for Parts" },
+        new() { WorkOrderNumber = "WO-001237", Customer = "Alice Brown", Vehicle = "Nissan Altima 2018", Status = "In Progress" },
+    };
+
+    private Color GetStatusColor(string status)
+    {
+        return status switch
+        {
+            "In Progress" => Color.Warning,
+            "Ready for Pickup" => Color.Success,
+            "Waiting for Parts" => Color.Error,
+            _ => Color.Default
+        };
+    }
+
+    private class WorkOrderSummary
+    {
+        public string WorkOrderNumber { get; set; } = string.Empty;
+        public string Customer { get; set; } = string.Empty;
+        public string Vehicle { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+    }
+}

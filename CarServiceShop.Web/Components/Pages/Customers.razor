@@ -1,0 +1,109 @@
+@page "/customers"
+@rendermode InteractiveServer
+@inject IHttpClientFactory HttpClientFactory
+@inject ISnackbar Snackbar
+
+<PageTitle>Customers - Car Service Shop</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">Customers</MudText>
+
+<MudCard Elevation="2">
+    <MudCardHeader>
+        <MudGrid>
+            <MudItem xs="12" md="6">
+                <MudTextField @bind-Value="searchString" Placeholder="Search customers..." Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            </MudItem>
+            <MudItem xs="12" md="6" Class="d-flex justify-end">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="OpenCreateDialog">
+                    New Customer
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudCardHeader>
+    <MudCardContent>
+        <MudTable Items="@FilteredCustomers" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@loading" LoadingProgressColor="Color.Primary">
+            <HeaderContent>
+                <MudTh>Customer #</MudTh>
+                <MudTh>Name</MudTh>
+                <MudTh>Email</MudTh>
+                <MudTh>Phone</MudTh>
+                <MudTh>Type</MudTh>
+                <MudTh>Status</MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Customer #">@context.CustomerNumber</MudTd>
+                <MudTd DataLabel="Name">@context.Name</MudTd>
+                <MudTd DataLabel="Email">@context.Email</MudTd>
+                <MudTd DataLabel="Phone">@context.Phone</MudTd>
+                <MudTd DataLabel="Type">@context.CustomerType</MudTd>
+                <MudTd DataLabel="Status">
+                    <MudChip T="string" Size="Size.Small" Color="@(context.IsActive ? Color.Success : Color.Default)">
+                        @(context.IsActive ? "Active" : "Inactive")
+                    </MudChip>
+                </MudTd>
+                <MudTd DataLabel="Actions">
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" OnClick="@(() => EditCustomer(context.Id))" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteCustomer(context.Id))" />
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudCardContent>
+</MudCard>
+
+@code {
+    private List<CustomerDto> customers = new();
+    private string searchString = string.Empty;
+    private bool loading = true;
+
+    private IEnumerable<CustomerDto> FilteredCustomers =>
+        customers.Where(c =>
+            string.IsNullOrWhiteSpace(searchString) ||
+            c.Name.Contains(searchString, StringComparison.OrdinalIgnoreCase) ||
+            c.Email.Contains(searchString, StringComparison.OrdinalIgnoreCase) ||
+            c.CustomerNumber.Contains(searchString, StringComparison.OrdinalIgnoreCase));
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCustomers();
+    }
+
+    private async Task LoadCustomers()
+    {
+        loading = true;
+        try
+        {
+            // TODO: Replace with actual API call
+            // For now, using sample data
+            customers = new List<CustomerDto>
+            {
+                new() { Id = 1, CustomerNumber = "CUST-000001", Name = "John Doe", Email = "john@example.com", Phone = "555-0100", CustomerType = CustomerType.Individual, IsActive = true, CreditLimit = 5000 },
+                new() { Id = 2, CustomerNumber = "CUST-000002", Name = "ABC Corporation", Email = "contact@abc.com", Phone = "555-0200", CustomerType = CustomerType.Corporate, IsActive = true, CreditLimit = 50000 },
+                new() { Id = 3, CustomerNumber = "CUST-000003", Name = "Jane Smith", Email = "jane@example.com", Phone = "555-0300", CustomerType = CustomerType.Individual, IsActive = true, CreditLimit = 3000 },
+            };
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading customers: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private void OpenCreateDialog()
+    {
+        Snackbar.Add("Create customer dialog - To be implemented", Severity.Info);
+    }
+
+    private void EditCustomer(int id)
+    {
+        Snackbar.Add($"Edit customer {id} - To be implemented", Severity.Info);
+    }
+
+    private async Task DeleteCustomer(int id)
+    {
+        Snackbar.Add($"Delete customer {id} - To be implemented", Severity.Info);
+    }
+}
